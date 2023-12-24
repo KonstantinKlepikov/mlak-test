@@ -1,0 +1,17 @@
+{% extends "mlak/base.html" %}
+
+{% block content %}
+<main>
+    <div>
+        {% if user.is_authenticated %}
+            <h1>Books:</h1>
+            {% for book in books %}
+                {% include 'mlak/book.html' %}
+            {% endfor%}
+        {% else %}
+            <h3>SignUp to read a books summary.</h3>
+        {% endif %}
+    </div>
+
+</main>
+{% endblock content %}

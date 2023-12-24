@@ -1,0 +1,84 @@
+version: '3.8'
+
+services:
+
+  mlak-redis:
+    image: bitnami/redis:latest
+    container_name: mlak-redis
+    environment:
+      - ALLOW_EMPTY_PASSWORD=yes
+    volumes:
+      - mlak-redis-data:/bitnami/redis/data
+    networks:
+      - mlak-api-network
+
+  mlak-postgres:
+    image: postgres:12
+    container_name: mlak-postgres
+    volumes:
+      - mlak-postgres-data:/var/lib/postgresql/data/pgdata
+    env_file: .env
+    ports:
+      - "5260:5432"
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD?Variable not set}
+      - POSTGRES_USER=${POSTGRES_USER?Variable not set}
+      - POSTGRES_DB=${POSTGRES_DB?Variable not set}
+    networks:
+      - mlak-api-network
+    restart: unless-stopped
+
+  mlak-celery-worker:
+    image: mlak-celery-worker
+    container_name: mlak-celery-worker
+    env_file: .env
+    build:
+      context: ./api
+      dockerfile: celeryworker.dockerfile
+    networks:
+      - mlak-api-network
+
+  mlak-flower:
+    image: mher/flower
+    container_name: mlak-flower
+    environment:
+      - FLOWER_PORT=5555
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+    ports:
+      - "5756:5555"
+    depends_on:
+      - mlak-celery-worker
+    env_file: .env
+    networks:
+      - mlak-api-network
+
+  mlak-api:
+    image: mlak-api
+    container_name: mlak-api
+    expose:
+      - "8000"
+    ports:
+      - "8201:8000"
+    env_file: .env
+    build:
+      context: ./api
+      dockerfile: api.dockerfile
+      args:
+        INSTALL_DEV: ${INSTALL_DEV-true}
+    volumes:
+      - ./api/app:/app
+    depends_on:
+      - mlak-postgres
+    networks:
+      - mlak-api-network
+
+volumes:
+  mlak-postgres-data:
+    driver: local
+
+  mlak-redis-data:
+    driver: local
+
+networks:
+  mlak-api-network:

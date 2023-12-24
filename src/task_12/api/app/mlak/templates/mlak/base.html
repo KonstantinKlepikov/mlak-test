@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Mlak</title>
+    </head>
+
+    <body>
+        <a href="/">Main</a>
+        {% if user.is_authenticated %}
+            | <a href="{% url 'mlak:logout' %}">Logout</a>
+        {% else %}
+            | <a href="{% url 'mlak:login' %}">Login</a>
+            | <a href="{% url 'mlak:signup' %}">Signup</a>
+        {% endif %}
+    {% block content %}
+    {% endblock content %}
+    </body>
+
+</html>
